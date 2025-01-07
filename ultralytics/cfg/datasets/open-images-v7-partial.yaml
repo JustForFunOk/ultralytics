@@ -35,19 +35,22 @@ download: |
   import fiftyone.zoo as foz
   import warnings
 
-  name = 'open-images-v7'
-  fraction = 1.0  # fraction of full dataset to use  用来限制样本的数量，这里我不知道总数量是多少暂时不做限定
+  # Customize where zoo datasets are downloaded
+  fo.config.dataset_zoo_dir = "/Volumes/SJ_Sandisk/fiftyone"
+
+  name = 'open-images-v7-partial'
+  fraction = 0.3  # fraction of full dataset to use  用来限制样本的数量，这里我不知道总数量是多少暂时不做限定
   LOGGER.warning('Starting download...')
   for split in 'train', 'validation':
       train = split == 'train'
 
       # Load Open Images dataset
-      dataset = foz.load_zoo_dataset(name,
+      dataset = foz.load_zoo_dataset('open-images-v7',
                                      split=split,
                                      label_types=['detections'],
                                      classes = ["Vehicle registration plate", "Human face"],
                                      dataset_dir=Path(SETTINGS['datasets_dir']) / 'fiftyone' / name,
-                                     max_samples=25)
+                                     max_samples=round((336188 if train else 3843) * fraction))
 
       # Define classes
       if train:

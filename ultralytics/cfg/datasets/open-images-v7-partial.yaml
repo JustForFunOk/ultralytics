@@ -5,10 +5,10 @@
 # parent
 # ├── ultralytics
 # └── datasets
-#     └── open-images-v7-partial  ← downloads here
+#     └── open-images-v7  ← downloads here
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../datasets/open-images-v7-partial # dataset root dir 
+path: ../datasets/open-images-v7 # dataset root dir 
 train: images/train # train images (relative to 'path') 1743042 images
 val: images/val # val images (relative to 'path') 41620 images
 test: # test images (optional)
@@ -18,51 +18,9 @@ test: # test images (optional)
 # ['Human face', 'Vehicle registration plate']
 # 顺序保持一致
 names:
-  0: Human face
-  1: Vehicle registration plate
+  0: Vehicle registration plate
+  1: Human face
+  
 
 # Download script/URL (optional) ---------------------------------------------------------------------------------------
-download: |
-  from ultralytics.utils import LOGGER, SETTINGS, Path, is_ubuntu, get_ubuntu_version
-  from ultralytics.utils.checks import check_requirements, check_version
 
-  check_requirements('fiftyone')
-  if is_ubuntu() and check_version(get_ubuntu_version(), '>=22.04'):
-      # Ubuntu>=22.04 patch https://github.com/voxel51/fiftyone/issues/2961#issuecomment-1666519347
-      check_requirements('fiftyone-db-ubuntu2204')
-
-  import fiftyone as fo
-  import fiftyone.zoo as foz
-  import warnings
-
-  # Customize where zoo datasets are downloaded
-  fo.config.dataset_zoo_dir = "/Volumes/SJ_Sandisk/fiftyone"
-
-  name = 'open-images-v7-partial'
-  fraction = 0.3  # fraction of full dataset to use  用来限制样本的数量，这里我不知道总数量是多少暂时不做限定
-  LOGGER.warning('Starting download...')
-  for split in 'train', 'validation':
-      train = split == 'train'
-
-      # Load Open Images dataset
-      dataset = foz.load_zoo_dataset('open-images-v7',
-                                     split=split,
-                                     label_types=['detections'],
-                                     classes = ["Vehicle registration plate", "Human face"],
-                                     dataset_dir=Path(SETTINGS['datasets_dir']) / 'fiftyone' / name,
-                                     max_samples=round((336188 if train else 3843) * fraction))
-
-      # Define classes
-      if train:
-          # classes = dataset.default_classes  # all classes
-          classes = dataset.distinct('ground_truth.detections.label')  # only observed classes
-
-      # Export to YOLO format
-      with warnings.catch_warnings():
-          warnings.filterwarnings("ignore", category=UserWarning, module="fiftyone.utils.yolo")
-          dataset.export(export_dir=str(Path(SETTINGS['datasets_dir']) / name),
-                         dataset_type=fo.types.YOLOv5Dataset,
-                         label_field='ground_truth',
-                         split='val' if split == 'validation' else split,
-                         classes=classes,
-                         overwrite=train)
